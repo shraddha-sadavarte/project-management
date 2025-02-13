@@ -15,34 +15,33 @@ const Auth = ({ isLogin, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
-    if (!formData.username || (!isLogin && !formData.email) || !formData.password) {
-      setError("Username and password are required.");
-      return;
-    }
-    
-    if (!isLogin && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError("Invalid email format.");
-      return;
-    }
-
-    if (!isLogin && formData.password.length < 8) {
-      setError("Password must be at least 8 characters and include a special character.");
-      return;
-    }
-
+  
+    const endpoint = isLogin ? "login" : "register";
+    const apiUrl = `http://localhost:5000/api/auth/${endpoint}`;
+  
     try {
-      const response = await onSubmit(formData);
-      if (!response.success) {
-        setError(response.message || "Invalid username or password.");
-      } else if (!isLogin) {
-        alert("Registration successful! Redirecting to login page.");
-        navigate("/login");
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+  
+      const data = await response.json();
+      if (!data.success) {
+        setError(data.message || "Something went wrong.");
+      } else {
+        if (isLogin) {
+          localStorage.setItem("token", data.token);
+          window.location.href = "/dashboard";
+        } else {
+          alert("Registration successful! Redirecting to login.");
+          window.location.href = "/login";
+        }
       }
-    } catch (err) {
-      setError("There was an error while logging in. Please try again later.");
+    } catch (error) {
+      setError("Server error. Please try again later.");
     }
-  };
+  };  
 
   return (
     <div className="auth-container">
